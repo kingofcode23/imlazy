@@ -1,175 +1,67 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-	<title>Demo MQTT</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<meta charset="utf-8">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.js" type="text/javascript"></script>
-    <script type = "text/javascript" language = "javascript">
-
-var topic = "ESP8266_sent_data";
-
-	 	var max,at_OK;
-	    function makeid() 
-	    {
-		  var text = "";
-		  var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-		  for (var i = 0; i < 5; i++)
-		    text += possible.charAt(Math.floor(Math.random() * possible.length));
-
-		  return text;
-		}
-	 	// Create a client instance
-		var client = new Paho.MQTT.Client("broker.hivemq.com", 8000, makeid());
-
-		// set callback handlers
-		client.onConnectionLost = onConnectionLost;
-		client.onMessageArrived = onMessageArrived;
-
-		var options = {
-		    useSSL: false,
-		    userName: "",
-		    password: "",
-		    onSuccess:onConnect,
-		    onFailure:doFail
-		 }
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP Weight Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: url('https://bizweb.dktcdn.net/100/447/044/products/a86b8840-dfba-4b9a-9743-ac34dcaac3c0-ea3e5221-c712-4582-898b-eebca910c7bb.jpg?v=1651585816693') no-repeat center center fixed;
+            background-size: contain;
+            margin: 0;
+            padding: 20px;
+            color: #ffffff;
+        }
+        .card {
+            background: #04abf8;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #ffffff;
+            display: inline-block;
+            margin-top: 45px;
+        }
+        .sensor-value {
+            font-size: 80px;
+            margin: 10px 0;
+        }
         
-        console.log("Connect to broker.hivemq.com:8000");
-		// connect the client
-		client.connect(options);
+    </style>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-		 function doFail(e){
-		    console.log(e);
-		 }
+        const firebaseConfig = {
+            apiKey: "AIzaSyDpfQm3P3aWStekra3YQ3v2OUZNaWsokhY",
+            authDomain: "testcn-ccace.firebaseapp.com",
+            databaseURL: "https://testcn-ccace-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "testcn-ccace",
+            storageBucket: "testcn-ccace.firebasestorage.app",
+            messagingSenderId: "336091133707",
+            appId: "1:336091133707:web:12a984bd3754ad157fd40e"
+        };
 
-		function onConnect() //sự kiên kết nối thành công
-		{
-		  console.log("Connect OK");
-		  client.subscribe("ESP8266_sent_data"); 
-		  client.subscribe("den");//đăng kí kênh 
-		}
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-		// called when the client loses its connection
-		function onConnectionLost(responseObject) 
-		{
-		  if (responseObject.errorCode !== 0) 
-		  {
-		    console.log(responseObject.errorMessage);
-		  }
-		}
+        function updateWeightData() {
+            const weightRef = ref(db, "test/float");
+            onValue(weightRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const weight = snapshot.val();
+                    document.getElementById("weight").innerText = weight + " kg";
+                }
+            });
+        }
 
-		// called when a message arrives
-		function onMessageArrived(message) 
-		{
-			console.log(message.destinationName + ":" + message.payloadString);
-    if (message.destinationName === "ESP8266_sent_data") {
-        document.getElementById("tinnhan").innerHTML = "Giá trị cảm biến: " + message.payloadString;
-    } else if (message.destinationName === "den") {
-        document.getElementById("den").innerHTML = "Trạng thái đèn: " + message.payloadString;
-    }
-
-		  var sensorValue = parseFloat(message.payloadString);
-            if (!isNaN(sensorValue)) {
-                var progressBar = document.getElementById("progressBar");
-                progressBar.value = sensorValue;
-            }
-		}
-		function public (topic,data)
-	      {
-	        message = new Paho.MQTT.Message(data);
-	        message.destinationName = topic;
-	        client.send(message);
-	      }
-		  function turnOn() {
-            	public('ESP8266_read_data','1');  
-				console.log("đèn đã bật");
-            } function turnOff() {
-				public('ESP8266_read_data','0');  
-				console.log("đèn đã tắt");
-            }
-        
+        window.onload = updateWeightData;
     </script>
-    
-    
-
-    <div class="container">
-        <h1>ESP Webserver</h1>
-        <h3>Thunderstorm</h3>
-		<p id="tinnhan">Giá trị cảm biến:</p>
-		<progress id="progressBar" value="0" max="1024">%</progress>
-		<p id="den">trạng thái đèn:</p>
-       
-		<div class="button-container">
-			<button id="onButton" class="button" onclick="turnOn()">On</button>
-			<button id="offButton" class="button" onclick="turnOff()">Off</button>
-		</div>
-       
+</head>
+<body>
+ 
+    <div class="card">
+        <p class="sensor-value"><span id="weight">--</span></p>
     </div>
-	<style>
-		html{
-    font-family: Arial, Helvetica, sans-serif;
-    margin: 0px auto;
-    text-align: center;
-}
-.container{
-    background-color: #0edfdb;
-    width: 300px;
-    border-radius: 10px;
-    margin: auto;
-    padding: 10px;
-	transition: transform 0.2s;
-}
-body
-{
-    margin-top: 50px;
-
-}
-h1{
-    color: white;
-    margin: 50px 30px;
-
-}
-h3{
-    color:white;
-    margin-bottom: 50px;
-}
-.button-container {
-            display: flex;
-			justify-content: center;
-        }
-.button{
-	margin-right: 10px; /* Khoảng cách giữa các nút */
-            padding: 10px 20px;
-            border: none;
-            color: white;
-            cursor: pointer;
-}
-#onButton {
-            background-color: green; /* Màu nền cho nút On */
-        }
-#offButton {
-            background-color: red; /* Màu nền cho nút Off */
-        }
-		.button:hover {
-            transform: scale(1.05); /* Phóng to nút khi di chuột qua */
-        }
-        .button:active {
-            transform: scale(0.95); /* Thu nhỏ nút khi được nhấn */
-        }
-p{
-    font-size: 20px;
-    color:black;
-    margin-bottom: 10px;
-}
-h4{
-    font-size: 30px;
-    color:rgb(255, 0, 17);
-    margin-bottom: 10px;
-}
-
-	</style>
-
 </body>
 </html>
